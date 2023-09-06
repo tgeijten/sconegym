@@ -1,0 +1,11 @@
+# Model used in simulation
+ModelHyfydy {
+	model_file = H1622_S2.hfd
+
+	# Set initial state
+	state_init_file = InitStateGait10.zml
+	fixed_control_step_size = 0.005
+	initial_equilibration_activation = 0.05
+	enable_dof_actuators = 0
+	<< neural_delays_FEA_v4.zml >>
+}
