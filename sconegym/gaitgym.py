@@ -31,15 +31,21 @@ class SconeGym(gym.Env, ABC):
     New environments also have to be registered in sconegym/__init__.py !
     """
 
-    def __init__(self, model_file, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        sconepy.set_log_level(3)
-        self.model = sconepy.load_model(model_file)
-        self.init_dof_pos = self.model.dof_position_array().copy()
-        self.init_dof_vel = self.model.dof_velocity_array().copy()
-
+    def __init__(self,
+                 model_file,
+                 left_leg_idxs,
+                 right_leg_idxs,
+                 name='none',
+                 clip_actions = False,
+                 target_vel = 1.2,
+                 leg_switch = True,
+                 use_delayed_sensors=False,
+                 use_delayed_actuators=False,
+                 run = False,
+                 obs_type = '2D',
+                 *args, **kwargs):
         # Internal settings
+        self.name = name
         self.episode = 0
         self.total_reward = 0.0
         self.init_dof_pos_std = 0.05
@@ -48,20 +54,31 @@ class SconeGym(gym.Env, ABC):
         self.init_activations_mean = 0.3
         self.init_activations_std = 0.1
         self.min_com_height = 0.5
-        self.target_vel = 1.2
         self.step_size = 0.01
         self.total_steps = 0
         self.steps = 0
         self.has_reset = False
-        self.use_delayed_sensors = False
-        self.use_delayed_actuators = False
+        self.store_next = False
+        # Settings from kwargs
+        self.target_vel = target_vel
+        self.use_delayed_sensors = use_delayed_sensors
+        self.use_delayed_actuators = use_delayed_actuators
+        self.clip_actions = clip_actions
+        self.leg_switch = leg_switch
+        self.run = run
+        self.obs_type = obs_type
+        self.left_leg_idxs = left_leg_idxs
+        self.right_leg_idxs = right_leg_idxs
+
+        super().__init__(*args, **kwargs)
+        sconepy.set_log_level(3)
+        self.model = sconepy.load_model(model_file)
+        self.init_dof_pos = self.model.dof_position_array().copy()
+        self.init_dof_vel = self.model.dof_velocity_array().copy()
+        self.set_output_dir("DATE_TIME." + self.model.name())
         self._find_head_body()
         self._setup_action_observation_spaces()
-        self.set_output_dir("DATE_TIME." + self.model.name())
-        self.store_next = False
-        self.clip_actions = False
-        self.leg_switch = False
-        self.go_running = False
+
 
     def step(self, action):
         """
@@ -74,7 +91,7 @@ class SconeGym(gym.Env, ABC):
         if not self.has_reset:
             raise Exception("You have to call reset() once before step()")
 
-        if self.delay:
+        if self.use_delayed_actuators:
             self.model.set_delayed_actuator_inputs(action)
         else:
             self.model.set_actuator_inputs(action)
@@ -253,10 +270,12 @@ class GaitGym(SconeGym):
         self.self_contact_coeff = 0.0
 
     def _get_obs(self):
-        if "h0918" in self.name:
+        if self.obs_type == '2D':
             return self._get_obs_2d()
-        else:
+        elif self.obs_type == '3D':
             return self._get_obs_3d()
+        else:
+            raise NotImplementedError
 
     def _get_obs_3d(self):
         acts = self.model.muscle_activation_array()
@@ -310,7 +329,7 @@ class GaitGym(SconeGym):
         # No x position in the state
         dof_values[1] = 0.0
 
-        if not self.delay:
+        if not self.use_delayed_sensors:
             return np.concatenate(
                 [
                     self.model.muscle_fiber_length_array(),
@@ -376,6 +395,9 @@ class GaitGym(SconeGym):
         return self._get_active_muscles(0.15)
 
     def _get_active_muscles(self, threshold):
+        """
+        Get the number of muscles whose activity is above the threshold.
+        """
         return (
             np.sum(
                 np.where(self.model.muscle_activation_array() > threshold)[0].shape[0]
@@ -388,7 +410,7 @@ class GaitGym(SconeGym):
         return np.exp(-np.square(vel - self.target_vel))
 
     def _gaussian_plateau_vel(self):
-        if self.go_running:
+        if self.run:
             return self.model_velocity()
         vel = self.model_velocity()
         if vel < self.target_vel:
@@ -433,67 +455,12 @@ class GaitGym(SconeGym):
 
     @property
     def horizon(self):
+        # TODO put this in model kwargs such that it works with deprl
         return 1000
 
 
-class GaitGymH0918(GaitGym):
-    def __init__(self, *args, **kwargs):
-        self.name = "H0918"
-        self.delay = False
-        # needed to switch leg joint angles
-        self.left_leg_idxs = [3, 4, 5]
-        self.right_leg_idxs = [6, 7, 8]
-        super().__init__(find_model_file("H0918.scone"), *args, **kwargs)
-
-
-class GaitGymH1622(GaitGym):
-    def __init__(self, *args, **kwargs):
-        self.name = "H1622"
-        self.delay = False
-        # needed to switch leg joint angles
-        self.left_leg_idxs = [6, 7, 8, 9, 10]
-        self.right_leg_idxs = [11, 12, 13, 14, 15]
-        super().__init__(find_model_file("H1622.scone"), *args, **kwargs)
-
-
-class GaitGymH2190(GaitGym):
-    def __init__(self, *args, **kwargs):
-        self.name = "H2190"
-        self.delay = False
-        # needed to switch leg joint angles
-        self.left_leg_idxs = [6, 7, 8, 9, 10, 11]
-        self.right_leg_idxs = [12, 13, 14, 15, 16, 17]
-        super().__init__(find_model_file("H2190.scone"), *args, **kwargs)
-
-
-class GaitGymH0918S2(GaitGym):
-    def __init__(self, *args, **kwargs):
-        self.name = "H0918S2"
-        self.delay = False
-        super().__init__(find_model_file("H0918_S2.scone"), *args, **kwargs)
-
-
-class GaitGymH2190S2(GaitGym):
-    def __init__(self, *args, **kwargs):
-        self.name = "H2190S2"
-        self.delay = False
-        # needed to switch leg joint angles
-        self.left_leg_idxs = [6, 7, 8, 9, 10, 11]
-        self.right_leg_idxs = [12, 13, 14, 15, 16, 17]
-        super().__init__(find_model_file("H2190_S2.scone"), *args, **kwargs)
-
-
-class GaitGymH1622S2(GaitGym):
-    def __init__(self, *args, **kwargs):
-        self.name = "H1622S2"
-        self.delay = False
-        # needed to switch leg joint angles
-        self.left_leg_idxs = [6, 7, 8, 9, 10]
-        self.right_leg_idxs = [11, 12, 13, 14, 15]
-        super().__init__(find_model_file("H1622_S2.scone"), *args, **kwargs)
-
-
 # Tutorial environments to see features
+# The Measure one needs to be fixed
 
 # TODO @thomas add right model file
 class GaitGymMeasureH0918(GaitGym):
@@ -512,16 +479,3 @@ class GaitGymMeasureH0918(GaitGym):
         return self.model.current_measure()
 
 
-class GaitGymDelayH0918(GaitGym):
-    """
-    Shows how to enable delays.
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.name = "H0918Delay"
-        self.delay = True
-        # needed to switch leg joint angles
-        self.left_leg_idxs = [3, 4, 5]
-        self.right_leg_idxs = [6, 7, 8]
-        super().__init__(find_model_file("H0918.scone"), *args, **kwargs)
-        self.step_size = 0.005

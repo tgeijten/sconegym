@@ -1,16 +1,91 @@
+import os
 from gym.envs.registration import register
 
-# Normal models
-register(id="sconegaith0918-v0", entry_point="sconegym.gaitgym:GaitGymH0918")
-register(id="sconegaith1622-v0", entry_point="sconegym.gaitgym:GaitGymH1622")
-register(id="sconegaith2190-v0", entry_point="sconegym.gaitgym:GaitGymH2190")
+curr_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Stronger models
-register(id="sconegaith0918S2-v0", entry_point="sconegym.gaitgym:GaitGymH0918S2")
-register(id="sconegaith1622S2-v0", entry_point="sconegym.gaitgym:GaitGymH1622S2")
-register(id="sconegaith2190S2-v0", entry_point="sconegym.gaitgym:GaitGymH2190S2")
 
-# special settings tutorial
-# TODO automate registration for all envs
-register(id="sconegaith0918_delay-v0", entry_point="sconegym.gaitgym:GaitGymDelayH0918")
-register(id="sconegaith0918_measure-v0", entry_point="sconegym.gaitgym:GaitGymMeasureH0918")
+# Walk Environments
+register(id="sconewalk_h0918-v0",
+         entry_point="sconegym.gaitgym:GaitGym",
+         kwargs={
+             'model_file': curr_dir + '/data/H0918.scone',
+             'obs_type': '2D',
+             'left_leg_idxs': [3, 4, 5],
+             'right_leg_idxs': [6, 7, 8],
+             'clip_actions': True,
+             'run': False,
+             'target_vel': 1.2,
+             'name': 'h0918',
+             'leg_switch': True})
+
+
+register(id="sconewalk_h1622-v0",
+         entry_point="sconegym.gaitgym:GaitGym",
+         kwargs={
+             'model_file': curr_dir + '/data/H1622.scone',
+             'obs_type': '3D',
+             'left_leg_idxs': [6, 7, 8, 9, 10],
+             'right_leg_idxs': [11, 12, 13, 14, 15],
+             'clip_actions': True,
+             'run': False,
+             'target_vel': 1.2,
+             'name': 'h1622',
+             'leg_switch': True})
+
+
+register(id="sconewalk_h2190-v0",
+         entry_point="sconegym.gaitgym:GaitGym",
+         kwargs={
+             'model_file': curr_dir + '/data/H2190.scone',
+             'obs_type': '3D',
+             'left_leg_idxs': [6, 7, 8, 9, 10, 11],
+             'right_leg_idxs': [12, 13, 14, 15, 16, 17],
+             'clip_actions': True,
+             'run': False, 
+             'target_vel': 1.2,
+             'name': 'h2190',
+             'leg_switch': True})
+
+
+# Run Environments
+register(id="sconerun_h0918-v0",
+         entry_point="sconegym.gaitgym:GaitGym",
+         kwargs={
+             'model_file': curr_dir + '/data/H0918_S2.scone',
+             'obs_type': '2D',
+             'left_leg_idxs': [3, 4, 5],
+             'right_leg_idxs': [6, 7, 8],
+             'clip_actions': False,
+             'run': True,
+             'target_vel': 1.2,
+             'name': 'h0918',
+             'leg_switch': True})
+
+
+register(id="sconerun_h1622-v0",
+         entry_point="sconegym.gaitgym:GaitGym",
+         kwargs={
+             'model_file': curr_dir + '/data/H1622_S2.scone',
+             'obs_type': '3D',
+             'left_leg_idxs': [6, 7, 8, 9, 10],
+             'right_leg_idxs': [11, 12, 13, 14, 15],
+             'clip_actions': False,
+             'run': True,
+             'target_vel': 1.2,
+             'name': 'h1622',
+             'leg_switch': True})
+
+
+register(id="sconerun_h2190-v0",
+         entry_point="sconegym.gaitgym:GaitGym",
+         kwargs={
+             'model_file': curr_dir + '/data/H2190_S2.scone',
+             'obs_type': '3D',
+             'left_leg_idxs': [6, 7, 8, 9, 10, 11],
+             'right_leg_idxs': [12, 13, 14, 15, 16, 17],
+             'clip_actions': False,
+             'run': True, 
+             'target_vel': 1.2,
+             'name': 'h2190',
+             'leg_switch': True})
+
