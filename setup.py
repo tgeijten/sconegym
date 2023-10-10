@@ -14,4 +14,5 @@ setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python :: 3.9",
     ],
+    install_requires=["gym==0.13"],
 )
