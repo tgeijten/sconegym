@@ -16,7 +16,6 @@ elif sys.platform.startswith('darwin'):
 
 import sconepy
 
-
 def find_model_file(model_file):
     this_dir, this_file = os.path.split(__file__)
     return os.path.join(this_dir, "data", model_file)
@@ -35,7 +34,6 @@ class SconeGym(gym.Env, ABC):
                  model_file,
                  left_leg_idxs,
                  right_leg_idxs,
-                 name='none',
                  clip_actions = False,
                  target_vel = 1.2,
                  leg_switch = True,
@@ -45,7 +43,6 @@ class SconeGym(gym.Env, ABC):
                  obs_type = '2D',
                  *args, **kwargs):
         # Internal settings
-        self.name = name
         self.episode = 0
         self.total_reward = 0.0
         self.init_dof_pos_std = 0.05
@@ -69,7 +66,6 @@ class SconeGym(gym.Env, ABC):
         self.obs_type = obs_type
         self.left_leg_idxs = left_leg_idxs
         self.right_leg_idxs = right_leg_idxs
-
         super().__init__(*args, **kwargs)
         sconepy.set_log_level(3)
         self.model = sconepy.load_model(model_file)
@@ -254,6 +250,10 @@ class SconeGym(gym.Env, ABC):
     @abstractmethod
     def _get_done(self):
         pass
+
+    @property
+    def results_dir(self):
+        return sconepy.scone_results_dir()
 
 
 class GaitGym(SconeGym):
@@ -470,7 +470,6 @@ class GaitGymMeasureH0918(GaitGym):
     """
 
     def __init__(self, *args, **kwargs):
-        self.name = "H0918"
         self.delay = False
         super().__init__(find_model_file("H0918_hfd_measure.scone"), *args, **kwargs)
 

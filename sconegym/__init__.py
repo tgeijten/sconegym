@@ -1,6 +1,5 @@
 import os
 from gym.envs.registration import register
-
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -15,7 +14,6 @@ register(id="sconewalk_h0918-v0",
              'clip_actions': True,
              'run': False,
              'target_vel': 1.2,
-             'name': 'h0918',
              'leg_switch': True})
 
 
@@ -29,7 +27,6 @@ register(id="sconewalk_h1622-v0",
              'clip_actions': True,
              'run': False,
              'target_vel': 1.2,
-             'name': 'h1622',
              'leg_switch': True})
 
 
@@ -41,9 +38,8 @@ register(id="sconewalk_h2190-v0",
              'left_leg_idxs': [6, 7, 8, 9, 10, 11],
              'right_leg_idxs': [12, 13, 14, 15, 16, 17],
              'clip_actions': True,
-             'run': False, 
+             'run': False,
              'target_vel': 1.2,
-             'name': 'h2190',
              'leg_switch': True})
 
 
@@ -58,7 +54,6 @@ register(id="sconerun_h0918-v0",
              'clip_actions': False,
              'run': True,
              'target_vel': 1.2,
-             'name': 'h0918',
              'leg_switch': True})
 
 
@@ -72,7 +67,6 @@ register(id="sconerun_h1622-v0",
              'clip_actions': False,
              'run': True,
              'target_vel': 1.2,
-             'name': 'h1622',
              'leg_switch': True})
 
 
@@ -84,8 +78,7 @@ register(id="sconerun_h2190-v0",
              'left_leg_idxs': [6, 7, 8, 9, 10, 11],
              'right_leg_idxs': [12, 13, 14, 15, 16, 17],
              'clip_actions': False,
-             'run': True, 
+             'run': True,
              'target_vel': 1.2,
-             'name': 'h2190',
              'leg_switch': True})
 
