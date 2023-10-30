@@ -374,11 +374,11 @@ class GaitGym(SconeGym):
     def _update_rwd_dict(self):
         self.rwd_dict = {
             "gaussian_vel": self.vel_coeff * self._gaussian_plateau_vel(),
-            "grf": -self.grf_coeff * self._grf(),
-            "smooth": -self.smooth_coeff * self._exc_smooth_cost(),
-            "number_muscles": -self.nmuscle_coeff * self._number_muscle_cost(),
-            "constr": -self.joint_limit_coeff * self._joint_limit_torques(),
-            "self_contact": -self.self_contact_coeff * self._get_self_contact(),
+            "grf": self.grf_coeff * self._grf(),
+            "smooth": self.smooth_coeff * self._exc_smooth_cost(),
+            "number_muscles": self.nmuscle_coeff * self._number_muscle_cost(),
+            "constr": self.joint_limit_coeff * self._joint_limit_torques(),
+            "self_contact": self.self_contact_coeff * self._get_self_contact(),
         }
         return self.rwd_dict
 
