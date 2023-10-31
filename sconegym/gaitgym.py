@@ -185,6 +185,7 @@ class SconeGym(gym.Env, ABC):
 
     def set_output_dir(self, dir_name):
         self.output_dir = sconepy.replace_string_tags(dir_name)
+        print(self.output_dir)
 
     def manually_load_model(self):
         self.model = sconepy.load_model(self.model_file)
@@ -262,7 +263,7 @@ class GaitGym(SconeGym):
         super().__init__(model_file, *args, **kwargs)
         self.rwd_dict = None
         self.mass = np.sum([x.mass() for x in self.model.bodies()])
-        self.vel_coeff = 0.0
+        self.vel_coeff = 10.0
         self.grf_coeff = 0.0
         self.smooth_coeff = 0.0
         self.nmuscle_coeff = 0.0
