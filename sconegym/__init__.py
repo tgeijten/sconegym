@@ -14,7 +14,17 @@ register(id="sconewalk_h0918-v0",
              'clip_actions': True,
              'run': False,
              'target_vel': 1.2,
-             'leg_switch': True})
+             'leg_switch': True,
+             'rew_keys':{
+                "vel_coeff": 10,
+                "grf_coeff": -0.07281,
+                "joint_limit_coeff": -0.1307,
+                "smooth_coeff": -0.097,
+                "nmuscle_coeff": -1.57929,
+                "self_contact_coeff": 0.0,
+             }
+         }
+        )
 
 
 register(id="sconewalk_h1622-v0",
@@ -27,7 +37,17 @@ register(id="sconewalk_h1622-v0",
              'clip_actions': True,
              'run': False,
              'target_vel': 1.2,
-             'leg_switch': True})
+             'leg_switch': True,
+             'rew_keys':{
+                "vel_coeff": 10,
+                "grf_coeff": -0.07281,
+                "joint_limit_coeff": -0.1307,
+                "smooth_coeff": -0.097,
+                "nmuscle_coeff": -1.57929,
+                "self_contact_coeff": 0.0,
+             }
+         }
+        )
 
 
 register(id="sconewalk_h2190-v0",
@@ -40,7 +60,17 @@ register(id="sconewalk_h2190-v0",
              'clip_actions': True,
              'run': False,
              'target_vel': 1.2,
-             'leg_switch': True})
+             'leg_switch': True,
+             'rew_keys':{
+                "vel_coeff": 10,
+                "grf_coeff": -0.07281,
+                "joint_limit_coeff": -0.1307,
+                "smooth_coeff": -0.097,
+                "nmuscle_coeff": -1.57929,
+                "self_contact_coeff": 0.0,
+             }
+         },
+        )
 
 
 # Run Environments
@@ -54,7 +84,17 @@ register(id="sconerun_h0918-v0",
              'clip_actions': False,
              'run': True,
              'target_vel': 1.2,
-             'leg_switch': True})
+             'leg_switch': True,
+             'rew_keys':{
+                "vel_coeff": 10,
+                "grf_coeff": -0.07281,
+                "joint_limit_coeff": -0.1307,
+                "smooth_coeff": -0.097,
+                "nmuscle_coeff": -1.57929,
+                "self_contact_coeff": -10,
+             }
+         }
+        )
 
 
 register(id="sconerun_h1622-v0",
@@ -67,7 +107,16 @@ register(id="sconerun_h1622-v0",
              'clip_actions': False,
              'run': True,
              'target_vel': 1.2,
-             'leg_switch': True})
+             'leg_switch': True,
+             'rew_keys':{
+                "vel_coeff": 10,
+                "grf_coeff": -0.07281,
+                "joint_limit_coeff": -0.1307,
+                "smooth_coeff": -0.097,
+                "nmuscle_coeff": -1.57929,
+                "self_contact_coeff": -10,
+             }
+         })
 
 
 register(id="sconerun_h2190-v0",
@@ -80,5 +129,15 @@ register(id="sconerun_h2190-v0",
              'clip_actions': False,
              'run': True,
              'target_vel': 1.2,
-             'leg_switch': True})
+             'leg_switch': True,
+             'rew_keys':{
+                "vel_coeff": 10,
+                "grf_coeff": -0.07281,
+                "joint_limit_coeff": -0.1307,
+                "smooth_coeff": -0.097,
+                "nmuscle_coeff": -1.57929,
+                "self_contact_coeff": -10,
+             }
+         }
+        )
 

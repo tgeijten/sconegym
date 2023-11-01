@@ -21,6 +21,16 @@ def find_model_file(model_file):
     return os.path.join(this_dir, "data", model_file)
 
 
+DEFAULT_REW_KEYS = {
+    "vel_coeff": 10,
+    "grf_coeff": 0.0,
+    "joint_limit_coeff": "0.0",
+    "smooth_coeff": 0.0,
+    "nmuscle_coeff": 0.0,
+    "self_contact_coeff": 0.0,
+}
+
+
 class SconeGym(gym.Env, ABC):
     """
     Main general purpose class that gives you a gym-ready sconepy interface
@@ -41,6 +51,7 @@ class SconeGym(gym.Env, ABC):
                  use_delayed_actuators=False,
                  run = False,
                  obs_type = '2D',
+                 rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
         self.episode = 0
@@ -56,7 +67,9 @@ class SconeGym(gym.Env, ABC):
         self.steps = 0
         self.has_reset = False
         self.store_next = False
-        # Settings from kwargs
+        # Reward coefficients from kwargs
+        for k, v in rew_keys.items():
+            setattr(self, k, float(v))
         self.target_vel = target_vel
         self.use_delayed_sensors = use_delayed_sensors
         self.use_delayed_actuators = use_delayed_actuators
@@ -185,7 +198,6 @@ class SconeGym(gym.Env, ABC):
 
     def set_output_dir(self, dir_name):
         self.output_dir = sconepy.replace_string_tags(dir_name)
-        print(self.output_dir)
 
     def manually_load_model(self):
         self.model = sconepy.load_model(self.model_file)
@@ -263,12 +275,6 @@ class GaitGym(SconeGym):
         super().__init__(model_file, *args, **kwargs)
         self.rwd_dict = None
         self.mass = np.sum([x.mass() for x in self.model.bodies()])
-        self.vel_coeff = 10.0
-        self.grf_coeff = 0.0
-        self.smooth_coeff = 0.0
-        self.nmuscle_coeff = 0.0
-        self.joint_limit_coeff = 0.0
-        self.self_contact_coeff = 0.0
 
     def _get_obs(self):
         if self.obs_type == '2D':
