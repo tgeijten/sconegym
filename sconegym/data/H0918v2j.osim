@@ -1354,7 +1354,7 @@
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>2342</max_isometric_force>
+					<max_isometric_force>2186</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
 					<optimal_fiber_length>0.1066</optimal_fiber_length>
 					<!--Resting length of the tendon-->
@@ -1806,7 +1806,7 @@
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>1759</max_isometric_force>
+					<max_isometric_force>1579</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
 					<optimal_fiber_length>0.0683</optimal_fiber_length>
 					<!--Resting length of the tendon-->
@@ -2182,7 +2182,7 @@
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>2342</max_isometric_force>
+					<max_isometric_force>2186</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
 					<optimal_fiber_length>0.1066</optimal_fiber_length>
 					<!--Resting length of the tendon-->
@@ -2634,7 +2634,7 @@
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>1759</max_isometric_force>
+					<max_isometric_force>1579</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
 					<optimal_fiber_length>0.0683</optimal_fiber_length>
 					<!--Resting length of the tendon-->
@@ -2683,7 +2683,7 @@
 							<HuntCrossleyForce::ContactParameters>
 								<!--Names of geometry objects affected by these parameters.-->
 								<geometry>platform heel_r toe_r</geometry>
-								<stiffness>2000000</stiffness>
+								<stiffness>5000000</stiffness>
 								<dissipation>1</dissipation>
 								<static_friction>0.9</static_friction>
 								<dynamic_friction>0.6</dynamic_friction>
@@ -2704,7 +2704,7 @@
 							<HuntCrossleyForce::ContactParameters>
 								<!--Names of geometry objects affected by these parameters.-->
 								<geometry>platform heel_l toe_l</geometry>
-								<stiffness>2000000</stiffness>
+								<stiffness>5000000</stiffness>
 								<dissipation>1</dissipation>
 								<static_friction>0.9</static_friction>
 								<dynamic_friction>0.6</dynamic_friction>

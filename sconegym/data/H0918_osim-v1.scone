@@ -1,0 +1,10 @@
+# Model used in simulation
+ModelOpenSim3 {
+	model_file = H0918v2j.osim
+
+	# Set initial state
+	state_init_file = InitStateGait10.zml
+	fixed_control_step_size = 0.005
+	initial_equilibration_activation = 0.05
+	<< neural_delays_FEA_v4.zml >>
+}
