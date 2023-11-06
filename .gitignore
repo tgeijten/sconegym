@@ -1,3 +1,7 @@
+# DEPRL baselines
+baselines_DEPRL/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
