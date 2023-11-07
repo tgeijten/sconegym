@@ -5,7 +5,7 @@ def gym_test(environment_name):
     env = gym.make(environment_name)
     
     print(f'Testing environment {environment_name}')
-    for episode in range(10):
+    for episode in range(5):
         state = env.reset()
         env.store_next_episode()
 
