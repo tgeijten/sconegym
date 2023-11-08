@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sconegym"
-version = "0.1.0"
+version = "0.2.0"
 description = "Gym environment for scone-hyfydy."
 authors = ["Pierre Schumacher <pierre.schumacher@tuebingen.mpg.de>"]
 license = "MIT"
