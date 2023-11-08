@@ -7,7 +7,7 @@ Before using sconegym, make sure you have the following installed:
 * Python 3.9
 
 ## Installation
-To install sconegym, navigate to the folder where you downloaded the sconegym repository and type:
+To install sconegym, navigate to your local sconegym repository and type:
 
 ```
 pip install -e .
