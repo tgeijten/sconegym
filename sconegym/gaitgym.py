@@ -1,4 +1,5 @@
 import os
+# Set non-random initial muscle activations
 import sys
 from abc import ABC, abstractmethod
 from typing import Optional
@@ -51,6 +52,8 @@ class SconeGym(gym.Env, ABC):
                  use_delayed_actuators=False,
                  run = False,
                  obs_type = '2D',
+                 init_activations_mean=0.3,
+                 init_activations_std=0.1,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -59,8 +62,8 @@ class SconeGym(gym.Env, ABC):
         self.init_dof_pos_std = 0.05
         self.init_dof_vel_std = 0.1
         self.init_load = 0.5
-        self.init_activations_mean = 0.3
-        self.init_activations_std = 0.1
+        self.init_activations_mean = init_activations_mean
+        self.init_activations_std = init_activations_std
         self.min_com_height = 0.5
         self.step_size = 0.01
         self.total_steps = 0
@@ -87,7 +90,6 @@ class SconeGym(gym.Env, ABC):
         self.set_output_dir("DATE_TIME." + self.model.name())
         self._find_head_body()
         self._setup_action_observation_spaces()
-
 
     def step(self, action):
         """
@@ -160,17 +162,20 @@ class SconeGym(gym.Env, ABC):
         if self.leg_switch:
             if np.random.uniform() < 0.5:
                 self._switch_legs()
-
-        # Randomize initial muscle activations
-        muscle_activations = np.clip(
-            np.random.normal(
-                self.init_activations_mean,
-                self.init_activations_std,
-                size=len(self.model.muscles()),
-            ),
-            0.01,
-            1.0,
-        )
+        if self.init_activations_std != 0:
+            # Randomize initial muscle activations
+            muscle_activations = np.clip(
+                np.random.normal(
+                    self.init_activations_mean,
+                    self.init_activations_std,
+                    size=len(self.model.muscles()),
+                ),
+                0.01,
+                1.0,
+            )
+        else:
+            # Set non-random initial muscle activations
+            muscle_activations = np.ones((len(self.model.muscles()),)) * self.init_activations_mean
         self.prev_acts = muscle_activations
         self.prev_excs = self.model.muscle_excitation_array()
         self.model.init_muscle_activations(muscle_activations)
@@ -180,7 +185,6 @@ class SconeGym(gym.Env, ABC):
 
         if self.init_load > 0:
             self.model.adjust_state_for_load(self.init_load)
-
         obs = self._get_obs()
         if return_info:
             return obs, (obs, {})
@@ -333,9 +337,7 @@ class GaitGym(SconeGym):
         self.prev_excs = self.model.muscle_excitation_array()
         dof_values = self.model.dof_position_array()
         dof_vels = self.model.dof_velocity_array()
-        # No x position in the state
         dof_values[1] = 0.0
-
         if not self.use_delayed_sensors:
             return np.concatenate(
                 [
@@ -397,13 +399,13 @@ class GaitGym(SconeGym):
 
     def _number_muscle_cost(self):
         """
-        Get number of muscle with activity over 0.15.
+        Get number of muscle with activations over 0.15.
         """
         return self._get_active_muscles(0.15)
 
     def _get_active_muscles(self, threshold):
         """
-        Get the number of muscles whose activity is above the threshold.
+        Get the number of muscles whose activations is above the threshold.
         """
         return (
             np.sum(
