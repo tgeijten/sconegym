@@ -1,6 +1,6 @@
 # Model used in simulation
 ModelHyfydy {
-	model_file = H1622Sv2k.hfd
+	model_file = H1622Sv2kb.hfd
 
 	# Set initial state
 	state_init_file = InitStateGait10.zml
