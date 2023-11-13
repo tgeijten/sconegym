@@ -3,7 +3,7 @@ ModelHyfydy {
 	model_file = H1622Sv2kb.hfd
 
 	# Set initial state
-	state_init_file = InitStateGait10.zml
+	state_init_file = InitStateRun45.zml
 	fixed_control_step_size = 0.005
 	initial_equilibration_activation = 0.05
 	zero_velocity_equilibration = 1

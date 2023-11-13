@@ -3,10 +3,9 @@ ModelHyfydy {
 	model_file = H2190v2k_S2.hfd
 
 	# Set initial state
-	state_init_file = InitStateGait10.zml
+	state_init_file = InitStateRun45.zml
 	fixed_control_step_size = 0.005
 	initial_equilibration_activation = 0.05
-	enable_dof_actuators = 0
 	zero_velocity_equilibration = 1
 	enable_dof_actuators = 0
 	use_omnidirectional_root_dofs = 1
