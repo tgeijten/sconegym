@@ -1,5 +1,5 @@
 # sconegym
-Gym environments for musculoskeletal simulations using [SCONE](https://github.com/tgeijten/scone-studio). Designed for predictive biomechanical simulations using Reinforcement Learning.
+Gym environments for reinforcement learning using biomechanical simulations.
 ## Installation
 1. Make sure Python 3.9 is installed on your system.
 2. Install the [latest version of SCONE](https://scone.software).
