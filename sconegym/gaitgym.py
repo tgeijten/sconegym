@@ -50,13 +50,15 @@ class SconeGym(gym.Env, ABC):
                  clip_actions = False,
                  target_vel = 1.2,
                  leg_switch = True,
-                 use_delayed_sensors=False,
-                 use_delayed_actuators=False,
+                 use_delayed_sensors = False,
+                 use_delayed_actuators = False,
                  run = False,
                  obs_type = '2D',
-                 init_activations_mean=0.3,
-                 init_activations_std=0.1,
-                 fall_recovery_time=0.0,
+                 init_activations_mean = 0.3,
+                 init_activations_std = 0.1,
+                 min_com_height = 0.5,
+                 min_head_height = 0.9,
+                 fall_recovery_time = 0.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -67,7 +69,8 @@ class SconeGym(gym.Env, ABC):
         self.init_load = 0.5
         self.init_activations_mean = init_activations_mean
         self.init_activations_std = init_activations_std
-        self.min_com_height = 0.5
+        self.min_com_height = min_com_height
+        self.min_head_height = min_head_height
         self.step_size = 0.01
         self.total_steps = 0
         self.steps = 0
@@ -466,7 +469,7 @@ class GaitGym(SconeGym):
         The episode ends if the center of mass is below min_com_height.
         """
         fall = self.model.com_pos().y < self.min_com_height
-        fall = fall or self.head_body.com_pos().y < 0.9
+        fall = fall or self.head_body.com_pos().y < self.min_head_height
         current_time = self.model.time()
         if fall:
             if self.fall_time < 0:
