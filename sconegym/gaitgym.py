@@ -45,6 +45,8 @@ class SconeGym(gym.Env, ABC):
                  model_file,
                  left_leg_idxs,
                  right_leg_idxs,
+                 root_body_name = 'pelvis',
+                 foot_body_name = 'calcn',
                  clip_actions = False,
                  target_vel = 1.2,
                  leg_switch = True,
@@ -54,6 +56,7 @@ class SconeGym(gym.Env, ABC):
                  obs_type = '2D',
                  init_activations_mean=0.3,
                  init_activations_std=0.1,
+                 fall_recovery_time=0.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -68,6 +71,7 @@ class SconeGym(gym.Env, ABC):
         self.step_size = 0.01
         self.total_steps = 0
         self.steps = 0
+        self.fall_time = -1.0
         self.has_reset = False
         self.store_next = False
         # Reward coefficients from kwargs
@@ -82,6 +86,10 @@ class SconeGym(gym.Env, ABC):
         self.obs_type = obs_type
         self.left_leg_idxs = left_leg_idxs
         self.right_leg_idxs = right_leg_idxs
+        self.root_body_name = root_body_name
+        self.left_foot_body_name = foot_body_name + "_l"
+        self.right_foot_body_name = foot_body_name + "_r"
+        self.fall_recovery_time = fall_recovery_time
         super().__init__(*args, **kwargs)
         sconepy.set_log_level(3)
         self.model = sconepy.load_model(model_file)
@@ -147,6 +155,7 @@ class SconeGym(gym.Env, ABC):
         self.time = 0
         self.total_reward = 0.0
         self.steps = 0
+        self.fall_time = -1.0
 
         # Check if data should be stored (slow)
         self.model.set_store_data(self.store_next)
@@ -315,17 +324,17 @@ class GaitGym(SconeGym):
 
     def _get_feet_relative_position(self):
         pelvis = (
-            [x for x in self.model.bodies() if "pelvis" in x.name()][0]
+            [x for x in self.model.bodies() if self.root_body_name in x.name()][0]
             .com_pos()
             .array()
         )
         foot_l = (
-            [x for x in self.model.bodies() if "calcn_l" in x.name()][0]
+            [x for x in self.model.bodies() if self.left_foot_body_name in x.name()][0]
             .com_pos()
             .array()
         )
         foot_r = (
-            [x for x in self.model.bodies() if "calcn_r" in x.name()][0]
+            [x for x in self.model.bodies() if self.right_foot_body_name in x.name()][0]
             .com_pos()
             .array()
         )
@@ -456,10 +465,17 @@ class GaitGym(SconeGym):
         """
         The episode ends if the center of mass is below min_com_height.
         """
-        if self.model.com_pos().y < self.min_com_height:
-            return True
-        if self.head_body.com_pos().y < 0.9:
-            return True
+        fall = self.model.com_pos().y < self.min_com_height
+        fall = fall or self.head_body.com_pos().y < 0.9
+        current_time = self.model.time()
+        if fall:
+            if self.fall_time < 0:
+                self.fall_time = current_time
+            if current_time - self.fall_time >= self.fall_recovery_time:
+                return True
+        else:
+            self.fall_time = -1.0
+
         return False
 
     @property
