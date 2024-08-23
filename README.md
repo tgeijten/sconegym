@@ -5,9 +5,11 @@ Gym environments for predictive biomechanical simulations using reinforcement le
 2. Install the [latest version of SCONE](https://scone.software)
 3. *Optional*: for faster simulations and access to all gym environments, be sure to activate the [Hyfydy simulation engine](https://scone.software/doku.php?id=hyfydy) inside SCONE. Without Hyfydy, you are limited to using OpenSim, which takes much longer to optimize. More information and a free trial can be found on the [Hyfydy website](https://hyfydy.com). 
 4. Clone the sconegym repository
-5. Open a console, navigate to your local sconegym folder and type: `pip install -e .` (the `-e` flag will ensure the package automatically gets updated when you update the sconegym repository)
-6. To see if everything works, try out the `example_environment.py` or `test_environments.py` from the sconegym folder
-7. To test sconegym in combination with [depRL](https://github.com/martius-lab/depRL), try running `example_deprl.py`, after following the instructions on the [depRL website](https://github.com/martius-lab/depRL)
+5. Open a console, navigate to your local sconegym folder and type:
+6. `pip install -r requirements.txt` to install the requirements
+7. `pip install -e .` (the `-e` flag will ensure the package automatically gets updated when you update the sconegym repository)
+8. To see if everything works, try out the `example_environment.py` or `test_environments.py` from the sconegym folder
+9. To test sconegym in combination with [depRL](https://github.com/martius-lab/depRL), try running `example_deprl.py`, after following the instructions on the [depRL website](https://github.com/martius-lab/depRL)
 ## Render and Analyze
 Results of an optimization can be rendered and analyzed in SCONE Studio, using the following steps:
 1. Open SCONE Studio
