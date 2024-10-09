@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import sconegym
 
 # create the sconegym env
@@ -10,7 +10,7 @@ for ep in range(100):
 
     ep_steps = 0
     ep_tot_reward = 0
-    state = env.reset()
+    state = env.reset()[0]
 
     while True:
         # samples random action
