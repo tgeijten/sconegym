@@ -4,7 +4,7 @@ import sys
 from abc import ABC, abstractmethod
 from typing import Optional
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 # Add sconepy folders to path
@@ -189,7 +189,7 @@ class SconeGym(gym.Env, ABC):
         if return_info:
             return obs, (obs, {})
         else:
-            return obs
+            return obs, {}
 
     def store_next_episode(self):
         """

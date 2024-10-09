@@ -10,6 +10,7 @@ readme = "README.md"
 python = "^3.8"
 numpy = "*"
 torch = "*"
+gymnasium = "0.29.0"
 
 [tool.poetry.group.dev.dependencies]
 omegaconf = "^2.3.0"
