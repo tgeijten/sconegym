@@ -154,6 +154,9 @@ class SconeGym(gym.Env, ABC):
 
         # Check if data should be stored (slow)
         self.model.set_store_data(self.store_next)
+        if self.store_next:
+            self.model.set_store_data_profile(1)
+            
         # Randomize initial pose
         dof_pos = self.init_dof_pos + np.random.normal(
             0, self.init_dof_pos_std, len(self.init_dof_pos)
