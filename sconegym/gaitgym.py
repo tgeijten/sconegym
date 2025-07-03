@@ -6,6 +6,7 @@ from typing import Optional
 
 import gym
 import numpy as np
+import math
 
 from sconetools import sconepy
 
@@ -50,6 +51,7 @@ class SconeGym(gym.Env, ABC):
                  init_activations_std = 0.1,
                  min_com_height = 0.5,
                  min_head_height = 0.9,
+                 max_head_offset = 0.15,
                  fall_recovery_time = 0.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
@@ -63,6 +65,7 @@ class SconeGym(gym.Env, ABC):
         self.init_activations_std = init_activations_std
         self.min_com_height = min_com_height
         self.min_head_height = min_head_height
+        self.max_head_offset = max_head_offset
         self.step_size = 0.01
         self.total_steps = 0
         self.steps = 0
@@ -235,11 +238,13 @@ class SconeGym(gym.Env, ABC):
         )
 
     def _find_head_body(self):
-        head_names = ["torso", "head", "lumbar"]
+        # head_body is the last body in model.bodies() that matches head_names
+        head_names = ["torso", "lumbar", "thorax", "head"]
         self.head_body = None
         for b in self.model.bodies():
             if b.name() in head_names:
                 self.head_body = b
+
         if self.head_body is None:
             raise Exception("Could not find head body")
 
@@ -463,8 +468,11 @@ class GaitGym(SconeGym):
         """
         The episode ends if the center of mass is below min_com_height.
         """
+        dh = self.head_body.com_pos() - self.model.com_pos() 
+        head_offset = math.sqrt(dh.x*dh.x + dh.z*dh.z)
         fall = self.model.com_pos().y < self.min_com_height
         fall = fall or self.head_body.com_pos().y < self.min_head_height
+        fall = fall or head_offset > self.max_head_offset
         current_time = self.model.time()
         if fall:
             if self.fall_time < 0:
