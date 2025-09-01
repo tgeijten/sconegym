@@ -467,7 +467,7 @@ class GaitGym(SconeGym):
         return np.mean(np.square(delta_excs))
 
     def _get_self_contact(self):
-        ignore_bodies = ["calcn_r", "calcn_l"]
+        ignore_bodies = ["calcn_r", "calcn_l", "toes_r", "toes_l"]
         contact_force = np.sum(
             [
                 np.abs(x.contact_force().array())
