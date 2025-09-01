@@ -171,7 +171,8 @@ class SconeGym(gym.Env, ABC):
         self.model.set_dof_velocities(dof_vel)
         if self.leg_switch:
             if np.random.uniform() < 0.5:
-                self._switch_legs()
+                # self._switch_legs()
+                self._mirror_model()
         if self.init_activations_std != 0:
             # Randomize initial muscle activations
             muscle_activations = np.clip(
@@ -258,6 +259,27 @@ class SconeGym(gym.Env, ABC):
         for left, right in zip(self.left_leg_idxs, self.right_leg_idxs):
             pos[left], pos[right] = pos[right], pos[left]
             vel[left], vel[right] = vel[right], vel[left]
+        self.model.set_dof_positions(pos)
+        self.model.set_dof_velocities(vel)
+
+
+    def _mirror_model(self):
+        """
+        Mirrors model dofs. Good for initial state randomization.
+        """
+        pos = self.model.dof_position_array()
+        vel = self.model.dof_velocity_array()
+        dofs = self.model.dofs()
+        name_to_index = {dof.name(): i for i, dof in enumerate(dofs)}
+
+        for index_r, dof in enumerate(dofs):
+            name = dof.name()
+            if name.endswith("_r"):
+                left_name = name[:-2] + "_l"
+                if left_name in name_to_index:
+                    index_l = name_to_index[left_name]
+                    pos[index_r], pos[index_l] = pos[index_l], pos[index_r]
+                    vel[index_r], vel[index_l] = vel[index_l], vel[index_r]
         self.model.set_dof_positions(pos)
         self.model.set_dof_velocities(vel)
 
