@@ -36,13 +36,11 @@ class SconeGym(gym.Env, ABC):
 
     def __init__(self,
                  model_file,
-                 left_leg_idxs,
-                 right_leg_idxs,
                  root_body_name = 'pelvis',
                  foot_body_name = 'calcn',
                  clip_actions = False,
                  target_vel = 1.2,
-                 leg_switch = True,
+                 mirror_model = True,
                  use_delayed_sensors = False,
                  use_delayed_actuators = False,
                  run = False,
@@ -79,11 +77,9 @@ class SconeGym(gym.Env, ABC):
         self.use_delayed_sensors = use_delayed_sensors
         self.use_delayed_actuators = use_delayed_actuators
         self.clip_actions = clip_actions
-        self.leg_switch = leg_switch
+        self.mirror_model = mirror_model
         self.run = run
         self.obs_type = obs_type
-        self.left_leg_idxs = left_leg_idxs
-        self.right_leg_idxs = right_leg_idxs
         self.root_body_name = root_body_name
         self.left_foot_body_name = foot_body_name + "_l"
         self.right_foot_body_name = foot_body_name + "_r"
@@ -169,9 +165,8 @@ class SconeGym(gym.Env, ABC):
             0, self.init_dof_vel_std, len(self.init_dof_vel)
         )
         self.model.set_dof_velocities(dof_vel)
-        if self.leg_switch:
+        if self.mirror_model:
             if np.random.uniform() < 0.5:
-                # self._switch_legs()
                 self._mirror_model()
         if self.init_activations_std != 0:
             # Randomize initial muscle activations
@@ -248,20 +243,6 @@ class SconeGym(gym.Env, ABC):
 
         if self.head_body is None:
             raise Exception("Could not find head body")
-
-    def _switch_legs(self):
-        """
-        Switches leg joint angles. Good for initial
-        state randomization.
-        """
-        pos = self.model.dof_position_array()
-        vel = self.model.dof_velocity_array()
-        for left, right in zip(self.left_leg_idxs, self.right_leg_idxs):
-            pos[left], pos[right] = pos[right], pos[left]
-            vel[left], vel[right] = vel[right], vel[left]
-        self.model.set_dof_positions(pos)
-        self.model.set_dof_velocities(vel)
-
 
     def _mirror_model(self):
         """
