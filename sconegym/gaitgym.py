@@ -143,6 +143,8 @@ class SconeGym(gym.Env, ABC):
         """
         Reset and randomize the initial state.
         """
+        if seed:
+            np.random.seed(seed)
         self.episode_number = np.random.randint(0, 1000000)
         self.model.reset()
         self.has_reset = True
