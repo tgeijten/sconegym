@@ -22,6 +22,7 @@ DEFAULT_REW_KEYS = {
     "smooth_coeff": 0.0,
     "nmuscle_coeff": 0.0,
     "self_contact_coeff": 0.0,
+    "lateral_deviation_coeff": 0.0,
 }
 
 
@@ -45,12 +46,17 @@ class SconeGym(gym.Env, ABC):
                  use_delayed_actuators = False,
                  run = False,
                  obs_type = '2D',
+                 obs_exclude_root_x = True,
+                 obs_exclude_root_y = False,
+                 obs_exclude_root_z = True,
                  init_activations_mean = 0.3,
                  init_activations_std = 0.1,
                  min_com_height = 0.5,
                  min_head_height = 0.9,
                  max_head_offset = 0.15,
                  fall_recovery_time = 0.0,
+                 grf_threshold = 1.2,
+                 lateral_deviation_threshold = 1,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -71,6 +77,8 @@ class SconeGym(gym.Env, ABC):
         self.has_reset = False
         self.store_next = False
         # Reward coefficients from kwargs
+        for k, v in DEFAULT_REW_KEYS.items():
+            setattr(self, k, float(v))
         for k, v in rew_keys.items():
             setattr(self, k, float(v))
         self.target_vel = target_vel
@@ -80,10 +88,15 @@ class SconeGym(gym.Env, ABC):
         self.mirror_model = mirror_model
         self.run = run
         self.obs_type = obs_type
+        self.obs_exclude_root_x = obs_exclude_root_x
+        self.obs_exclude_root_y = obs_exclude_root_y
+        self.obs_exclude_root_z = obs_exclude_root_z
         self.root_body_name = root_body_name
         self.left_foot_body_name = foot_body_name + "_l"
         self.right_foot_body_name = foot_body_name + "_r"
         self.fall_recovery_time = fall_recovery_time
+        self.grf_threshold = grf_threshold
+        self.lateral_deviation_threshold = lateral_deviation_threshold
         super().__init__(*args, **kwargs)
         sconepy.set_log_level(3)
         self.model = sconepy.load_model(model_file)
@@ -298,9 +311,9 @@ class GaitGym(SconeGym):
         self.mass = np.sum([x.mass() for x in self.model.bodies()])
 
     def _get_obs(self):
-        if self.obs_type == '2D':
+        if self.obs_type.startswith('2D'):
             return self._get_obs_2d()
-        elif self.obs_type == '3D':
+        elif self.obs_type.startswith('3D'):
             return self._get_obs_3d()
         else:
             raise NotImplementedError
@@ -311,9 +324,12 @@ class GaitGym(SconeGym):
         self.prev_excs = self.model.muscle_excitation_array()
         dof_values = self.model.dof_position_array()
         dof_vels = self.model.dof_velocity_array()
-        # No x or y position in the state
-        dof_values[3] = 0.0
-        dof_values[5] = 0.0
+        if self.obs_exclude_root_x:
+            dof_values[3] = 0.0 # no x position
+        if self.obs_exclude_root_y:
+            dof_values[4] = 0.0 # no y position
+        if self.obs_exclude_root_z:
+            dof_values[5] = 0.0 # no z position
         return np.concatenate(
             [
                 self.model.muscle_fiber_length_array(),
@@ -405,6 +421,7 @@ class GaitGym(SconeGym):
             "number_muscles": self.nmuscle_coeff * self._number_muscle_cost(),
             "constr": self.joint_limit_coeff * self._joint_limit_torques(),
             "self_contact": self.self_contact_coeff * self._get_self_contact(),
+            "lateral_deviation": self.lateral_deviation_coeff * self._get_lateral_deviation(),
         }
         return self.rwd_dict
 
@@ -460,6 +477,10 @@ class GaitGym(SconeGym):
         )
         return np.clip(contact_force, -100, 100) / 100
 
+    def _get_lateral_deviation(self):
+        zpos = self.model.com_pos().z
+        return max(0, abs(zpos) - self.lateral_deviation_threshold)
+
     def _joint_limit_torques(self):
         return np.mean(
             [np.mean(np.abs(x.limit_torque().array())) for x in self.model.joints()]
@@ -467,7 +488,7 @@ class GaitGym(SconeGym):
 
     def _grf(self):
         grf = self.model.contact_load()
-        return max(0, grf - 1.2)
+        return max(0, grf - self.grf_threshold)
 
     def _get_done(self) -> bool:
         """
