@@ -23,6 +23,7 @@ DEFAULT_REW_KEYS = {
     "nmuscle_coeff": 0.0,
     "self_contact_coeff": 0.0,
     "lateral_deviation_coeff": 0.0,
+    "scone_measure_coeff": 1.0,
 }
 
 
@@ -422,7 +423,15 @@ class GaitGym(SconeGym):
             "constr": self.joint_limit_coeff * self._joint_limit_torques(),
             "self_contact": self.self_contact_coeff * self._get_self_contact(),
             "lateral_deviation": self.lateral_deviation_coeff * self._get_lateral_deviation(),
+            "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
+
+        # store current rewards if storing data
+        if self.model.get_store_data():
+            # print(f"{self.model.time()}\t{self.model.current_data_frame_time()}\t{self.step_size}")
+            for key, value in self.rwd_dict.items():
+                self.model.store_external_data("sconegym." + key, value)
+
         return self.rwd_dict
 
     def get_rwd_dict(self):
