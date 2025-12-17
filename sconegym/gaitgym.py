@@ -23,7 +23,9 @@ DEFAULT_REW_KEYS = {
     "nmuscle_coeff": 0.0,
     "self_contact_coeff": 0.0,
     "lateral_deviation_coeff": 0.0,
-    "scone_measure_coeff": 1.0,
+    "muscle_activation_coeff": 0.0,
+    "hand_distance_coeff": 0.0,
+    "scone_measure_coeff": 0.0,
 }
 
 
@@ -40,6 +42,7 @@ class SconeGym(gym.Env, ABC):
                  model_file,
                  root_body_name = 'pelvis',
                  foot_body_name = 'calcn',
+                 hand_body_name = 'hand',
                  clip_actions = False,
                  target_vel = 1.2,
                  mirror_model = True,
@@ -57,7 +60,9 @@ class SconeGym(gym.Env, ABC):
                  max_head_offset = 0.15,
                  fall_recovery_time = 0.0,
                  grf_threshold = 1.2,
+                 muscle_activation_threshold = 0.25,
                  lateral_deviation_threshold = 1,
+                 hand_distance_threshold = 0.5,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -95,14 +100,19 @@ class SconeGym(gym.Env, ABC):
         self.root_body_name = root_body_name
         self.left_foot_body_name = foot_body_name + "_l"
         self.right_foot_body_name = foot_body_name + "_r"
+        self.hand_body_name = hand_body_name
         self.fall_recovery_time = fall_recovery_time
         self.grf_threshold = grf_threshold
         self.lateral_deviation_threshold = lateral_deviation_threshold
+        self.muscle_activation_threshold = muscle_activation_threshold
+        self.hand_distance_threshold = hand_distance_threshold
         super().__init__(*args, **kwargs)
         sconepy.set_log_level(3)
         self.model = sconepy.load_model(model_file)
         self.init_dof_pos = self.model.dof_position_array().copy()
         self.init_dof_vel = self.model.dof_velocity_array().copy()
+        self.relative_muscle_volumes = np.array([m.volume() for m in self.model.muscles()])
+        self.relative_muscle_volumes /= np.sum(self.relative_muscle_volumes)
         self.set_output_dir("DATE_TIME." + self.model.name())
         self._find_head_body()
         self._setup_action_observation_spaces()
@@ -423,6 +433,8 @@ class GaitGym(SconeGym):
             "constr": self.joint_limit_coeff * self._joint_limit_torques(),
             "self_contact": self.self_contact_coeff * self._get_self_contact(),
             "lateral_deviation": self.lateral_deviation_coeff * self._get_lateral_deviation(),
+            "muscle_activation": self.muscle_activation_coeff * self._get_muscle_activation(),
+            "hand_distance": self.hand_distance_coeff * self._get_hand_distance(),
             "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
 
@@ -489,6 +501,22 @@ class GaitGym(SconeGym):
     def _get_lateral_deviation(self):
         zpos = self.model.com_pos().z
         return max(0, abs(zpos) - self.lateral_deviation_threshold)
+
+    def _get_muscle_activation(self):
+        act = self.model.muscle_activation_array()
+        return max(0, np.dot(self.relative_muscle_volumes, act**2) - self.muscle_activation_threshold)
+
+    def _get_hand_distance(self):
+        if self.hand_distance_coeff != 0:
+            if not hasattr(self, "hand_body_l"):
+                self.hand_body_l = self.model.find_body(self.hand_body_name + "_l")
+                self.hand_body_r = self.model.find_body(self.hand_body_name + "_r")
+            com = self.model.com_pos();
+            dl = max(0, (self.hand_body_l.com_pos() - com).length() - self.hand_distance_threshold)
+            dr = max(0, (self.hand_body_r.com_pos() - com).length() - self.hand_distance_threshold)
+            return dl + dr
+        else:
+            return 0
 
     def _joint_limit_torques(self):
         return np.mean(
