@@ -48,6 +48,7 @@ class SconeGym(gym.Env, ABC):
                  mirror_model = True,
                  use_delayed_sensors = False,
                  use_delayed_actuators = False,
+                 use_hand_position_sensors = False,
                  run = False,
                  obs_type = '2D',
                  obs_exclude_root_x = True,
@@ -63,6 +64,8 @@ class SconeGym(gym.Env, ABC):
                  muscle_activation_threshold = 0.25,
                  lateral_deviation_threshold = 1,
                  hand_distance_threshold = 0.5,
+                 hand_distance_velocity_min = 2.0,
+                 hand_distance_velocity_max = 4.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -90,6 +93,7 @@ class SconeGym(gym.Env, ABC):
         self.target_vel = target_vel
         self.use_delayed_sensors = use_delayed_sensors
         self.use_delayed_actuators = use_delayed_actuators
+        self.use_hand_position_sensors = use_hand_position_sensors
         self.clip_actions = clip_actions
         self.mirror_model = mirror_model
         self.run = run
@@ -97,15 +101,13 @@ class SconeGym(gym.Env, ABC):
         self.obs_exclude_root_x = obs_exclude_root_x
         self.obs_exclude_root_y = obs_exclude_root_y
         self.obs_exclude_root_z = obs_exclude_root_z
-        self.root_body_name = root_body_name
-        self.left_foot_body_name = foot_body_name + "_l"
-        self.right_foot_body_name = foot_body_name + "_r"
-        self.hand_body_name = hand_body_name
         self.fall_recovery_time = fall_recovery_time
         self.grf_threshold = grf_threshold
         self.lateral_deviation_threshold = lateral_deviation_threshold
         self.muscle_activation_threshold = muscle_activation_threshold
         self.hand_distance_threshold = hand_distance_threshold
+        self.hand_distance_velocity_min = hand_distance_velocity_min
+        self.hand_distance_velocity_max = hand_distance_velocity_max
         super().__init__(*args, **kwargs)
         sconepy.set_log_level(3)
         self.model = sconepy.load_model(model_file)
@@ -113,8 +115,16 @@ class SconeGym(gym.Env, ABC):
         self.init_dof_vel = self.model.dof_velocity_array().copy()
         self.relative_muscle_volumes = np.array([m.volume() for m in self.model.muscles()])
         self.relative_muscle_volumes /= np.sum(self.relative_muscle_volumes)
-        self.set_output_dir("DATE_TIME." + self.model.name())
+
+        # Find important bodies
+        self.root_body = self.model.find_body(root_body_name)
+        self.foot_body_l = self.model.find_body(foot_body_name + "_l")
+        self.foot_body_r = self.model.find_body(foot_body_name + "_r")
+        self.hand_body_l = self.try_find_body(hand_body_name + "_l")
+        self.hand_body_r = self.try_find_body(hand_body_name + "_r")
         self._find_head_body()
+
+        self.set_output_dir("DATE_TIME." + self.model.name())
         self._setup_action_observation_spaces()
 
     def step(self, action):
@@ -248,6 +258,12 @@ class SconeGym(gym.Env, ABC):
     def model_velocity(self):
         return self.model.com_vel().x
 
+    def model_velocity_weight(self, lb, ub):
+        if ub <= lb:
+            return 1.0
+        vel = self.model_velocity()
+        return max(0.0, min(1.0, (vel - lb) / (ub - lb)))
+
     def _setup_action_observation_spaces(self):
         num_act = len(self.model.actuators())
         self.action_space = gym.spaces.Box(
@@ -258,6 +274,9 @@ class SconeGym(gym.Env, ABC):
         self.observation_space = gym.spaces.Box(
             low=-10000, high=10000, shape=self._get_obs().shape, dtype=np.float32
         )
+
+    def try_find_body(self, body_name):
+        return next((b for b in self.model.bodies() if b.name() == body_name), None)
 
     def _find_head_body(self):
         # head_body is the last body in model.bodies() that matches head_names
@@ -358,22 +377,15 @@ class GaitGym(SconeGym):
         ).copy()
 
     def _get_feet_relative_position(self):
-        pelvis = (
-            [x for x in self.model.bodies() if self.root_body_name in x.name()][0]
-            .com_pos()
-            .array()
-        )
-        foot_l = (
-            [x for x in self.model.bodies() if self.left_foot_body_name in x.name()][0]
-            .com_pos()
-            .array()
-        )
-        foot_r = (
-            [x for x in self.model.bodies() if self.right_foot_body_name in x.name()][0]
-            .com_pos()
-            .array()
-        )
-        return np.concatenate([foot_l - pelvis, foot_r - pelvis], dtype=np.float32)
+        pelvis = self.root_body.com_pos().array()
+        foot_l = self.foot_body_l.com_pos().array()
+        foot_r = self.foot_body_r.com_pos().array()
+        if not self.use_hand_position_sensors:
+            return np.concatenate([foot_l - pelvis, foot_r - pelvis], dtype=np.float32)
+
+        hand_l = self.hand_body_l.com_pos().array()
+        hand_r = self.hand_body_r.com_pos().array()
+        return np.concatenate([foot_l - pelvis, foot_r - pelvis, hand_l - pelvis, hand_r - pelvis], dtype=np.float32)
 
     def _get_obs_2d(self):
         acts = self.model.muscle_activation_array()
@@ -440,9 +452,11 @@ class GaitGym(SconeGym):
 
         # store current rewards if storing data
         if self.model.get_store_data():
-            # print(f"{self.model.time()}\t{self.model.current_data_frame_time()}\t{self.step_size}")
             for key, value in self.rwd_dict.items():
                 self.model.store_external_data("sconegym." + key, value)
+            self.model.store_external_data("sconegym.model_velocity", self.model_velocity())
+            vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
+            self.model.store_external_data("sconegym.model_velocity_weight", vw)
 
         return self.rwd_dict
 
@@ -507,16 +521,13 @@ class GaitGym(SconeGym):
         return max(0, np.dot(self.relative_muscle_volumes, act**2) - self.muscle_activation_threshold)
 
     def _get_hand_distance(self):
-        if self.hand_distance_coeff != 0:
-            if not hasattr(self, "hand_body_l"):
-                self.hand_body_l = self.model.find_body(self.hand_body_name + "_l")
-                self.hand_body_r = self.model.find_body(self.hand_body_name + "_r")
-            com = self.model.com_pos();
-            dl = max(0, (self.hand_body_l.com_pos() - com).length() - self.hand_distance_threshold)
-            dr = max(0, (self.hand_body_r.com_pos() - com).length() - self.hand_distance_threshold)
-            return dl + dr
-        else:
-            return 0
+        if self.hand_distance_coeff == 0:
+            return 0.0
+        com = self.model.com_pos()
+        dl = max(0, (self.hand_body_l.com_pos() - com).length() - self.hand_distance_threshold)
+        dr = max(0, (self.hand_body_r.com_pos() - com).length() - self.hand_distance_threshold)
+        vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
+        return vw * (dl + dr)
 
     def _joint_limit_torques(self):
         return np.mean(
