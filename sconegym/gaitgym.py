@@ -25,6 +25,7 @@ DEFAULT_REW_KEYS = {
     "lateral_deviation_coeff": 0.0,
     "muscle_activation_coeff": 0.0,
     "hand_distance_coeff": 0.0,
+    "hand_foot_coordination_coeff": 0.0,
     "scone_measure_coeff": 0.0,
 }
 
@@ -66,6 +67,7 @@ class SconeGym(gym.Env, ABC):
                  hand_distance_threshold = 0.5,
                  hand_distance_velocity_min = 2.0,
                  hand_distance_velocity_max = 4.0,
+                 hand_foot_coordination_velocity = 8.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -108,6 +110,7 @@ class SconeGym(gym.Env, ABC):
         self.hand_distance_threshold = hand_distance_threshold
         self.hand_distance_velocity_min = hand_distance_velocity_min
         self.hand_distance_velocity_max = hand_distance_velocity_max
+        self.hand_foot_coordination_velocity = hand_foot_coordination_velocity
         super().__init__(*args, **kwargs)
         sconepy.set_log_level(3)
         self.model = sconepy.load_model(model_file)
@@ -447,6 +450,7 @@ class GaitGym(SconeGym):
             "lateral_deviation": self.lateral_deviation_coeff * self._get_lateral_deviation(),
             "muscle_activation": self.muscle_activation_coeff * self._get_muscle_activation(),
             "hand_distance": self.hand_distance_coeff * self._get_hand_distance(),
+            "hand_foot_coordination": self.hand_foot_coordination_coeff * self._get_hand_foot_coordination(),
             "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
 
@@ -528,6 +532,13 @@ class GaitGym(SconeGym):
         dr = max(0, (self.hand_body_r.com_pos() - com).length() - self.hand_distance_threshold)
         vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
         return vw * (dl + dr)
+
+    def _get_hand_foot_coordination(self):
+        if self.hand_foot_coordination_coeff == 0:
+            return 0.0
+        hand_velx = self.hand_body_l.com_vel().x - self.hand_body_r.com_vel().x
+        foot_velx = self.foot_body_l.com_vel().x - self.foot_body_r.com_vel().x
+        return -math.tanh(hand_velx / self.hand_foot_coordination_velocity) * math.tanh(foot_velx / self.hand_foot_coordination_velocity)
 
     def _joint_limit_torques(self):
         return np.mean(
