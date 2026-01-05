@@ -26,6 +26,7 @@ DEFAULT_REW_KEYS = {
     "muscle_activation_coeff": 0.0,
     "hand_distance_coeff": 0.0,
     "hand_foot_coordination_coeff": 0.0,
+    "head_stability_coeff": 0.0,
     "scone_measure_coeff": 0.0,
 }
 
@@ -68,6 +69,7 @@ class SconeGym(gym.Env, ABC):
                  hand_distance_velocity_min = 2.0,
                  hand_distance_velocity_max = 4.0,
                  hand_foot_coordination_velocity = 8.0,
+                 head_stability_threshold = 0.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -111,6 +113,9 @@ class SconeGym(gym.Env, ABC):
         self.hand_distance_velocity_min = hand_distance_velocity_min
         self.hand_distance_velocity_max = hand_distance_velocity_max
         self.hand_foot_coordination_velocity = hand_foot_coordination_velocity
+        self.head_stability_threshold = head_stability_threshold
+
+        # init super and load model
         super().__init__(*args, **kwargs)
         sconepy.set_log_level(3)
         self.model = sconepy.load_model(model_file)
@@ -451,6 +456,7 @@ class GaitGym(SconeGym):
             "muscle_activation": self.muscle_activation_coeff * self._get_muscle_activation(),
             "hand_distance": self.hand_distance_coeff * self._get_hand_distance(),
             "hand_foot_coordination": self.hand_foot_coordination_coeff * self._get_hand_foot_coordination(),
+            "head_stability": self.head_stability_coeff * self._get_head_stability(),
             "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
 
@@ -539,6 +545,10 @@ class GaitGym(SconeGym):
         hand_velx = self.hand_body_l.com_vel().x - self.hand_body_r.com_vel().x
         foot_velx = self.foot_body_l.com_vel().x - self.foot_body_r.com_vel().x
         return -math.tanh(hand_velx / self.hand_foot_coordination_velocity) * math.tanh(foot_velx / self.hand_foot_coordination_velocity)
+
+    def _get_head_stability(self):
+        av = self.head_body.ang_vel().length()
+        return max(0, av - self.head_stability_threshold)
 
     def _joint_limit_torques(self):
         return np.mean(
