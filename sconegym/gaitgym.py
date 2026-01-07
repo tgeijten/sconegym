@@ -138,6 +138,7 @@ class SconeGym(gym.Env, ABC):
     def step(self, action):
         """
         takes an action and advances environment by 1 step.
+        IMPORTANT: DEPRL does not call this function
         """
         if self.clip_actions:
             action = np.clip(action, 0, 0.5)
@@ -336,6 +337,10 @@ class SconeGym(gym.Env, ABC):
     def _get_done(self):
         pass
 
+    @abstractmethod
+    def _store_custom_data(self):
+        pass
+
     @property
     def results_dir(self):
         return sconepy.scone_results_dir()
@@ -460,15 +465,22 @@ class GaitGym(SconeGym):
             "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
 
-        # store current rewards if storing data
+        # this is called from here instead of step() because DEPRL does not call step() 
         if self.model.get_store_data():
-            for key, value in self.rwd_dict.items():
+            self._store_custom_data()
                 self.model.store_external_data("sconegym." + key, value)
             self.model.store_external_data("sconegym.model_velocity", self.model_velocity())
             vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
             self.model.store_external_data("sconegym.model_velocity_weight", vw)
 
         return self.rwd_dict
+
+    def _store_custom_data(self):
+        for key, value in self.rwd_dict.items():
+            self.model.store_external_data("sconegym." + key, value)
+        self.model.store_external_data("sconegym.model_velocity", self.model_velocity())
+        vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
+        self.model.store_external_data("sconegym.model_velocity_weight", vw)
 
     def get_rwd_dict(self):
         if not self.rwd_dict:
