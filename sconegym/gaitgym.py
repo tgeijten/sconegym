@@ -27,6 +27,7 @@ DEFAULT_REW_KEYS = {
     "hand_distance_coeff": 0.0,
     "hand_foot_coordination_coeff": 0.0,
     "head_stability_coeff": 0.0,
+    "head_posture_coeff": 0.0,
     "scone_measure_coeff": 0.0,
 }
 
@@ -70,6 +71,8 @@ class SconeGym(gym.Env, ABC):
                  hand_distance_velocity_max = 4.0,
                  hand_foot_coordination_velocity = 8.0,
                  head_stability_threshold = 0.0,
+                 head_posture_threshold = 5.0,
+                 target_head_tilt = -5.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -114,6 +117,8 @@ class SconeGym(gym.Env, ABC):
         self.hand_distance_velocity_max = hand_distance_velocity_max
         self.hand_foot_coordination_velocity = hand_foot_coordination_velocity
         self.head_stability_threshold = head_stability_threshold
+        self.head_posture_threshold = head_posture_threshold
+        self.target_head_tilt = target_head_tilt
 
         # init super and load model
         super().__init__(*args, **kwargs)
@@ -462,16 +467,13 @@ class GaitGym(SconeGym):
             "hand_distance": self.hand_distance_coeff * self._get_hand_distance(),
             "hand_foot_coordination": self.hand_foot_coordination_coeff * self._get_hand_foot_coordination(),
             "head_stability": self.head_stability_coeff * self._get_head_stability(),
+            "head_posture": self.head_posture_coeff * self._get_head_posture(),
             "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
 
         # this is called from here instead of step() because DEPRL does not call step() 
         if self.model.get_store_data():
             self._store_custom_data()
-                self.model.store_external_data("sconegym." + key, value)
-            self.model.store_external_data("sconegym.model_velocity", self.model_velocity())
-            vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
-            self.model.store_external_data("sconegym.model_velocity_weight", vw)
 
         return self.rwd_dict
 
@@ -561,6 +563,11 @@ class GaitGym(SconeGym):
     def _get_head_stability(self):
         av = self.head_body.ang_vel().length()
         return max(0, av - self.head_stability_threshold)
+
+    def _get_head_posture(self):
+        ori = self.head_body.orientation().to_euler_yxz()
+        penalty = abs(ori.x) + abs(ori.z - self.target_head_tilt)
+        return max(0, penalty - self.head_posture_threshold)
 
     def _joint_limit_torques(self):
         return np.mean(
