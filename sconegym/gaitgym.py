@@ -293,13 +293,12 @@ class SconeGym(gym.Env, ABC):
         return next((b for b in self.model.bodies() if b.name() == body_name), None)
 
     def _find_head_body(self):
-        # head_body is the last body in model.bodies() that matches head_names
-        head_names = ["torso", "lumbar", "thorax", "head"]
+        head_names = ["head", "skull", "thorax", "torso", "pelvis"]
         self.head_body = None
-        for b in self.model.bodies():
-            if b.name() in head_names:
-                self.head_body = b
-
+        for name in head_names:
+            if found_body := self.try_find_body(name):
+                self.head_body = found_body
+                break
         if self.head_body is None:
             raise Exception("Could not find head body")
 
