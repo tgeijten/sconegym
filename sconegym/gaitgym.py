@@ -119,6 +119,7 @@ class SconeGym(gym.Env, ABC):
         self.head_stability_threshold = head_stability_threshold
         self.head_posture_threshold = head_posture_threshold
         self.target_head_tilt = target_head_tilt
+        self.target_head_orientation = sconepy.Quat(0.0, 0.0, self.target_head_tilt)
 
         # init super and load model
         super().__init__(*args, **kwargs)
@@ -139,6 +140,8 @@ class SconeGym(gym.Env, ABC):
 
         self.set_output_dir("DATE_TIME." + self.model.name())
         self._setup_action_observation_spaces()
+
+        # print(f"sconegym initialized. model={self.model.name()} root={self.root_body.name()} head={self.head_body.name()}")
 
     def step(self, action):
         """
@@ -564,9 +567,14 @@ class GaitGym(SconeGym):
         return max(0, av - self.head_stability_threshold)
 
     def _get_head_posture(self):
-        ori = self.head_body.orientation().to_euler_yxz()
-        penalty = abs(ori.x) + abs(ori.z - self.target_head_tilt)
-        return max(0, penalty - self.head_posture_threshold)
+        ea = self.head_body.orientation().to_euler_yzx()
+        penalty1 = abs(ea.x) + abs(ea.z - self.target_head_tilt)
+        qdiff = -self.head_body.orientation() * self.target_head_orientation
+        penalty2 = math.degrees(qdiff.to_rotation_vector().length())
+        if self.model.get_store_data():
+            self.model.store_external_data("sconegym.penalty1", penalty1)
+            self.model.store_external_data("sconegym.penalty2", penalty2)
+        return max(0, penalty2 - self.head_posture_threshold)
 
     def _joint_limit_torques(self):
         return np.mean(
