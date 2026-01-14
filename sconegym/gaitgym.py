@@ -361,10 +361,12 @@ class GaitGym(SconeGym):
         self.mass = np.sum([x.mass() for x in self.model.bodies()])
 
     def _get_obs(self):
-        if self.obs_type.startswith('2D'):
+        if self.obs_type == "2D":
             return self._get_obs_2d()
-        elif self.obs_type.startswith('3D'):
+        elif self.obs_type == "3D":
             return self._get_obs_3d()
+        elif self.obs_type == "3Dv2":
+            return self._get_obs_3dv2()
         else:
             raise NotImplementedError
 
@@ -391,6 +393,29 @@ class GaitGym(SconeGym):
                 self._get_feet_relative_position(),
                 dof_values,
                 dof_vels,
+                acts,
+            ],
+            dtype=np.float32,
+        )
+
+    def _get_obs_3dv2(self):
+        acts = self.model.muscle_activation_array()
+        self.prev_excs = self.model.muscle_excitation_array()
+        body_oris = np.concatenate([b.orientation().to_euler_yzx().array() for b in self.model.bodies()])
+        com_pos_vec = self.model.com_pos()
+        com_pos = np.array([com_pos_vec.y, com_pos_vec.z])
+        com_vel = self.model.com_vel().array()
+        return np.concatenate(
+            [
+                self.model.muscle_fiber_length_array(),
+                self.model.muscle_fiber_velocity_array(),
+                self.model.muscle_force_array(),
+                self.model.muscle_excitation_array(),
+                self._get_feet_relative_position(),
+                body_oris,
+                com_pos,
+                com_vel,
+                self.model.dof_velocity_array(),
                 acts,
             ],
             dtype=np.float32,
