@@ -235,7 +235,7 @@ class SconeGym(gym.Env, ABC):
         else:
             # Set non-random initial muscle activations
             muscle_activations = np.ones((len(self.model.muscles()),)) * self.init_activations_mean
-        self.prev_acts = muscle_activations
+        # self.prev_acts = muscle_activations
         self.prev_excs = self.model.muscle_excitation_array()
         self.model.init_muscle_activations(muscle_activations)
 
@@ -370,7 +370,7 @@ class GaitGym(SconeGym):
 
     def _get_obs_3d(self):
         acts = self.model.muscle_activation_array()
-        self.prev_acts = self.model.muscle_activation_array().copy()
+        # self.prev_acts = self.model.muscle_activation_array().copy()
         self.prev_excs = self.model.muscle_excitation_array()
         dof_values = self.model.dof_position_array()
         dof_vels = self.model.dof_velocity_array()
@@ -394,7 +394,7 @@ class GaitGym(SconeGym):
                 acts,
             ],
             dtype=np.float32,
-        ).copy()
+        )
 
     def _get_feet_relative_position(self):
         pelvis = self.root_body.com_pos().array()
@@ -409,7 +409,7 @@ class GaitGym(SconeGym):
 
     def _get_obs_2d(self):
         acts = self.model.muscle_activation_array()
-        self.prev_acts = self.model.muscle_activation_array().copy()
+        # self.prev_acts = self.model.muscle_activation_array().copy()
         self.prev_excs = self.model.muscle_excitation_array()
         dof_values = self.model.dof_position_array()
         dof_vels = self.model.dof_velocity_array()
@@ -429,7 +429,7 @@ class GaitGym(SconeGym):
                     acts,
                 ],
                 dtype=np.float32,
-            ).copy()
+            )
 
         else:
             return np.concatenate(
