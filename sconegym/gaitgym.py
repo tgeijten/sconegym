@@ -401,7 +401,7 @@ class GaitGym(SconeGym):
     def _get_obs_3dv2(self):
         acts = self.model.muscle_activation_array()
         self.prev_excs = self.model.muscle_excitation_array()
-        body_oris = np.concatenate([b.orientation().to_euler_yzx().array() for b in self.model.bodies()])
+        body_oris = np.concatenate([b.orientation().to_euler_yzx().array() for b in self.model.bodies()])*(math.pi/180.0)
         com_pos_vec = self.model.com_pos()
         com_pos = np.array([com_pos_vec.y, com_pos_vec.z])
         com_vel = self.model.com_vel().array()
