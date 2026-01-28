@@ -28,6 +28,7 @@ DEFAULT_REW_KEYS = {
     "hand_foot_coordination_coeff": 0.0,
     "head_stability_coeff": 0.0,
     "head_posture_coeff": 0.0,
+    "root_posture_coeff": 0.0,
     "scone_measure_coeff": 0.0,
 }
 
@@ -73,6 +74,8 @@ class SconeGym(gym.Env, ABC):
                  head_stability_threshold = 0.0,
                  head_posture_threshold = 5.0,
                  target_head_tilt = -5.0,
+                 root_posture_threshold = 5.0,
+                 target_root_tilt = -5.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -120,6 +123,9 @@ class SconeGym(gym.Env, ABC):
         self.head_posture_threshold = head_posture_threshold
         self.target_head_tilt = target_head_tilt
         self.target_head_orientation = sconepy.Quat(0.0, 0.0, self.target_head_tilt)
+        self.root_posture_threshold = root_posture_threshold
+        self.target_root_tilt = target_root_tilt
+        self.target_root_orientation = sconepy.Quat(0.0, 0.0, self.target_root_tilt)
 
         # init super and load model
         super().__init__(*args, **kwargs)
@@ -495,6 +501,7 @@ class GaitGym(SconeGym):
             "hand_foot_coordination": self.hand_foot_coordination_coeff * self._get_hand_foot_coordination(),
             "head_stability": self.head_stability_coeff * self._get_head_stability(),
             "head_posture": self.head_posture_coeff * self._get_head_posture(),
+            "root_posture": self.root_posture_coeff * self._get_root_posture(),
             "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
 
@@ -592,14 +599,16 @@ class GaitGym(SconeGym):
         return max(0, av - self.head_stability_threshold)
 
     def _get_head_posture(self):
-        ea = self.head_body.orientation().to_euler_yzx()
-        penalty1 = abs(ea.x) + abs(ea.z - self.target_head_tilt)
+        # ea = self.head_body.orientation().to_euler_yzx()
+        # penalty1 = abs(ea.x) + abs(ea.z - self.target_head_tilt)
         qdiff = -self.head_body.orientation() * self.target_head_orientation
-        penalty2 = math.degrees(qdiff.to_rotation_vector().length())
-        if self.model.get_store_data():
-            self.model.store_external_data("sconegym.penalty1", penalty1)
-            self.model.store_external_data("sconegym.penalty2", penalty2)
-        return max(0, penalty2 - self.head_posture_threshold)
+        penalty = math.degrees(qdiff.to_rotation_vector().length())
+        return max(0, penalty - self.head_posture_threshold)
+
+    def _get_root_posture(self):
+        qdiff = -self.root_body.orientation() * self.target_root_orientation
+        penalty = math.degrees(qdiff.to_rotation_vector().length())
+        return max(0, penalty - self.root_posture_threshold)
 
     def _joint_limit_torques(self):
         return np.mean(
