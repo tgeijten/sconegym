@@ -68,8 +68,8 @@ class SconeGym(gym.Env, ABC):
                  muscle_activation_threshold = 0.25,
                  lateral_deviation_threshold = 1,
                  hand_distance_threshold = 0.5,
-                 hand_distance_velocity_min = 2.0,
-                 hand_distance_velocity_max = 4.0,
+                 velocity_ramp_start = 2.0,
+                 velocity_ramp_end = 4.0,
                  hand_foot_coordination_velocity = 8.0,
                  head_stability_threshold = 0.0,
                  head_posture_threshold = 5.0,
@@ -116,8 +116,8 @@ class SconeGym(gym.Env, ABC):
         self.lateral_deviation_threshold = lateral_deviation_threshold
         self.muscle_activation_threshold = muscle_activation_threshold
         self.hand_distance_threshold = hand_distance_threshold
-        self.hand_distance_velocity_min = hand_distance_velocity_min
-        self.hand_distance_velocity_max = hand_distance_velocity_max
+        self.velocity_ramp_start = velocity_ramp_start
+        self.velocity_ramp_end = velocity_ramp_end
         self.hand_foot_coordination_velocity = hand_foot_coordination_velocity
         self.head_stability_threshold = head_stability_threshold
         self.head_posture_threshold = head_posture_threshold
@@ -281,11 +281,11 @@ class SconeGym(gym.Env, ABC):
     def model_velocity(self):
         return self.model.com_vel().x
 
-    def model_velocity_weight(self, lb, ub):
-        if ub <= lb:
+    def velocity_ramp(self):
+        if self.velocity_ramp_end <= self.velocity_ramp_start:
             return 1.0
-        vel = self.model_velocity()
-        return max(0.0, min(1.0, (vel - lb) / (ub - lb)))
+        vrel = (self.model_velocity() - self.velocity_ramp_start) / (self.velocity_ramp_end - self.velocity_ramp_start)
+        return max(0.0, min(1.0, vrel))
 
     def _setup_action_observation_spaces(self):
         num_act = len(self.model.actuators())
@@ -515,8 +515,7 @@ class GaitGym(SconeGym):
         for key, value in self.rwd_dict.items():
             self.model.store_external_data("sconegym." + key, value)
         self.model.store_external_data("sconegym.model_velocity", self.model_velocity())
-        vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
-        self.model.store_external_data("sconegym.model_velocity_weight", vw)
+        self.model.store_external_data("sconegym.velocity_ramp", self.velocity_ramp())
 
     def get_rwd_dict(self):
         if not self.rwd_dict:
@@ -575,7 +574,7 @@ class GaitGym(SconeGym):
         return max(0, abs(zpos) - self.lateral_deviation_threshold)
 
     def _get_muscle_activation(self):
-        act = self.model.muscle_activation_array()
+        act = self.velocity_ramp() * self.model.muscle_activation_array()
         return max(0, np.dot(self.relative_muscle_volumes, act**2) - self.muscle_activation_threshold)
 
     def _get_hand_distance(self):
@@ -584,8 +583,7 @@ class GaitGym(SconeGym):
         com = self.model.com_pos()
         dl = max(0, (self.hand_body_l.com_pos() - com).length() - self.hand_distance_threshold)
         dr = max(0, (self.hand_body_r.com_pos() - com).length() - self.hand_distance_threshold)
-        vw = self.model_velocity_weight(self.hand_distance_velocity_min, self.hand_distance_velocity_max)
-        return vw * (dl + dr)
+        return self.velocity_ramp() * (dl + dr)
 
     def _get_hand_foot_coordination(self):
         if self.hand_foot_coordination_coeff == 0:
@@ -595,19 +593,19 @@ class GaitGym(SconeGym):
         return -math.tanh(hand_velx / self.hand_foot_coordination_velocity) * math.tanh(foot_velx / self.hand_foot_coordination_velocity)
 
     def _get_head_stability(self):
-        av = self.head_body.ang_vel().length()
+        av = self.velocity_ramp() * self.head_body.ang_vel().length()
         return max(0, av - self.head_stability_threshold)
 
     def _get_head_posture(self):
         # ea = self.head_body.orientation().to_euler_yzx()
         # penalty1 = abs(ea.x) + abs(ea.z - self.target_head_tilt)
         qdiff = -self.head_body.orientation() * self.target_head_orientation
-        penalty = math.degrees(qdiff.to_rotation_vector().length())
+        penalty =  self.velocity_ramp() * math.degrees(qdiff.to_rotation_vector().length())
         return max(0, penalty - self.head_posture_threshold)
 
     def _get_root_posture(self):
         qdiff = -self.root_body.orientation() * self.target_root_orientation
-        penalty = math.degrees(qdiff.to_rotation_vector().length())
+        penalty =  self.velocity_ramp() * math.degrees(qdiff.to_rotation_vector().length())
         return max(0, penalty - self.root_posture_threshold)
 
     def _joint_limit_torques(self):
