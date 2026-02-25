@@ -26,6 +26,8 @@ def try_find_sconepy(pathlist):
 # search for sconepy in os-specific paths
 if importlib.util.find_spec("sconepy") is None:
     path_list = []
+    if sconepy_path := os.getenv("SCONEPY_PATH"):
+        path_list.append(sconepy_path)
 
     if sys.platform.startswith("win"):
         if scone_install := os.getenv("SCONE_PATH"):
@@ -56,10 +58,10 @@ if importlib.util.find_spec("sconepy") is None:
 
     # check if we succeeded
     if path_to_sconepy:
-        print("Found sconepy at", path_to_sconepy)
+        print("Found SconePy at", path_to_sconepy)
         sys.path.append(path_to_sconepy)
     else:
-        print("Could not find sconepy in", path_list)
+        print("Could not find SconePy in", path_list)
         raise Exception("Could not find SconePy in " + path_list)
 
 import sconepy
