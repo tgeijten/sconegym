@@ -76,6 +76,7 @@ class SconeGym(gym.Env, ABC):
                  target_head_tilt = -5.0,
                  root_posture_threshold = 5.0,
                  target_root_tilt = -5.0,
+                 self_contact_limit = 0.0,
                  rew_keys = DEFAULT_REW_KEYS,
                  *args, **kwargs):
         # Internal settings
@@ -126,6 +127,7 @@ class SconeGym(gym.Env, ABC):
         self.root_posture_threshold = root_posture_threshold
         self.target_root_tilt = target_root_tilt
         self.target_root_orientation = sconepy.Quat(0.0, 0.0, self.target_root_tilt)
+        self.self_contact_limit = self_contact_limit
 
         # init super and load model
         super().__init__(*args, **kwargs)
@@ -147,6 +149,8 @@ class SconeGym(gym.Env, ABC):
         self.set_output_dir("DATE_TIME." + self.model.name())
         self._setup_action_observation_spaces()
 
+        # for i, m in enumerate(self.model.muscles()):
+        #     print(f"{i}\t{m.name()}\t{self.model.actuators()[i].name()}")
         # print(f"sconegym initialized. model={self.model.name()} root={self.root_body.name()} head={self.head_body.name()}")
 
     def step(self, action):
@@ -559,15 +563,20 @@ class GaitGym(SconeGym):
         return np.mean(np.square(delta_excs))
 
     def _get_self_contact(self):
-        ignore_bodies = ["ground", "calcn_r", "calcn_l", "toes_r", "toes_l"]
-        contact_force = np.sum(
-            [
-                np.abs(x.contact_force().array())
-                for x in self.model.bodies()
-                if x.name() not in ignore_bodies
-            ]
-        )
-        return np.clip(contact_force, -100, 100) / 100
+        if self.self_contact_limit > 0:
+            # new version returns self contact in N with limit
+            return min(self.self_contact_limit, self.model.self_contact_force())
+        else:
+            # legacy version returns contact / 100 based on ignore bodies
+            ignore_bodies = ["ground", "calcn_r", "calcn_l", "toes_r", "toes_l"]
+            contact_force = np.sum(
+                [
+                    np.abs(x.contact_force().array())
+                    for x in self.model.bodies()
+                    if x.name() not in ignore_bodies
+                ]
+            )
+            return np.clip(contact_force/2, -100, 100) / 100
 
     def _get_lateral_deviation(self):
         zpos = self.model.com_pos().z
