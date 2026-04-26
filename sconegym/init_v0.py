@@ -48,10 +48,10 @@ register(id="sconewalk_h0918_osim-v1",
          }
         )
 
-register(id="sconewalk_h1622-v1",
+register(id="sconewalk_h1922-v1",
          entry_point="sconegym.gaitgym:GaitGym",
          kwargs={
-             'model_file': curr_dir + '/data-v1/H1622.scone',
+             'model_file': curr_dir + '/data-v1/H1922.scone',
              'obs_type': '3D',
              'left_leg_idxs': [6, 7, 8, 9, 10],
              'right_leg_idxs': [11, 12, 13, 14, 15],
@@ -115,10 +115,10 @@ register(id="sconerun_h0918-v1",
          }
         )
 
-register(id="sconerun_h1622-v1",
+register(id="sconerun_h1922-v1",
          entry_point="sconegym.gaitgym:GaitGym",
          kwargs={
-             'model_file': curr_dir + '/data-v1/H1622_run.scone',
+             'model_file': curr_dir + '/data-v1/H1922_run.scone',
              'obs_type': '3D',
              'left_leg_idxs': [6, 7, 8, 9, 10],
              'right_leg_idxs': [11, 12, 13, 14, 15],
@@ -181,10 +181,10 @@ register(id="sconewalk_h0918-v0",
          }
         )
 
-register(id="sconewalk_h1622-v0",
+register(id="sconewalk_h1922-v0",
          entry_point="sconegym.gaitgym:GaitGym",
          kwargs={
-             'model_file': curr_dir + '/data/H1622.scone',
+             'model_file': curr_dir + '/data/H1922.scone',
              'obs_type': '3D',
              'left_leg_idxs': [6, 7, 8, 9, 10],
              'right_leg_idxs': [11, 12, 13, 14, 15],
@@ -247,10 +247,10 @@ register(id="sconerun_h0918-v0",
          }
         )
 
-register(id="sconerun_h1622-v0",
+register(id="sconerun_h1922-v0",
          entry_point="sconegym.gaitgym:GaitGym",
          kwargs={
-             'model_file': curr_dir + '/data/H1622_S2.scone',
+             'model_file': curr_dir + '/data/H1922_S2.scone',
              'obs_type': '3D',
              'left_leg_idxs': [6, 7, 8, 9, 10],
              'right_leg_idxs': [11, 12, 13, 14, 15],
