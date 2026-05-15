@@ -1,0 +1,33 @@
+# Model used in simulation
+ModelHyfydyPrecise {
+	model_file = models/H32130_260315.hfd
+	
+	state_init_file = init/InitStateH42d4Gait11p911tx0.zml
+	#state_init_file = init/InitStateH42Run40V1.zml
+	#state_init_file = init/InitStateH30Gait1147.zml
+	
+	fixed_control_step_size = 0.005
+	enforce_min_integration_step_size = 1
+	#relax_fixed_time_step_precision = 1
+	
+	initial_equilibration_activation = 0.05
+	zero_velocity_equilibration = 1
+	
+	enable_dof_actuators = 0
+	use_omnidirectional_root_dofs = 1
+	
+	model_options {
+		use_legacy_pin_joints = 0
+		joint_rotational_damping = 0.02
+	}
+	
+	MuscleModifier { include = "iliacus*;psoas*" max_isometric_force { factor = 1.5 } }
+	#MuscleModifier { include = "bifem*;semimem*;semiten*" max_isometric_force { factor = 1.5 } }
+	#MuscleModifier { include = "vas*" max_isometric_force { factor = 0.67 } }
+	
+	<< models/MuscleGroupsG4.scone >>
+	remove_actuators_in_muscle_groups = 1
+	replace_muscles_with_muscle_groups = 1
+	
+	<< models/neural_delays_FEA_v4.zml >>
+}

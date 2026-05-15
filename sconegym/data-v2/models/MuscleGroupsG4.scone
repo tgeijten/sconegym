@@ -1,0 +1,54 @@
+# leg muscle groups
+MuscleGroup {
+	name = glut_max_r
+	include = "glut_max?_r"
+}
+#MuscleGroup {
+#	name = hip_exrot_r
+#	include = "quad_fem_r;obt_int_r;obt_ext_r"
+#	dual_sided = 1
+#}
+#MuscleGroup {
+#	name = add_mag_r
+#	include = "add_mag?_r"
+#}
+MuscleGroup {
+	name = vasti_r
+	include = "vas_med_r;vas_int_r;vas_lat_r"
+}
+MuscleGroup {
+	name = gastroc_r
+	include = "gas_med_r;gas_lat_r"
+}
+
+# torso muscle groups
+MuscleGroup {
+	name = obl_ant_r
+	include = "int_obl1_r;int_obl2_r;ext_obl1_l;ext_obl2_l"
+}
+MuscleGroup {
+	name = int_obl_r
+	include = "int_obl3_r;int_obl4_r"
+}
+MuscleGroup {
+	name = ext_obl_r
+	include = "ext_obl3_r;ext_obl4_r"
+}
+
+# shoulder-arm muscle groups
+MuscleGroup {
+	name = infraspi_r
+	include = "infraspi_*_r"
+}
+MuscleGroup {
+	name = subscap_r
+	include = "subscap_*_r"
+}
+MuscleGroup {
+	name = pect_maj_thorax_r
+	include = "pect_maj_thorax_*_r"
+}
+MuscleGroup {
+	name = lat_dors_r
+	include = "lat_dors_*_r"
+}
