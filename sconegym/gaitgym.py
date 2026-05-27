@@ -28,6 +28,7 @@ DEFAULT_REW_KEYS = {
     "hand_foot_coordination_coeff": 0.0,
     "head_stability_coeff": 0.0,
     "head_posture_coeff": 0.0,
+    "thorax_posture_coeff": 0.0,
     "root_posture_coeff": 0.0,
     "scone_measure_coeff": 0.0,
 }
@@ -47,6 +48,7 @@ class SconeGym(gym.Env, ABC):
                  root_body_name = 'pelvis',
                  foot_body_name = 'calcn',
                  hand_body_name = 'hand',
+                 thorax_body_name = 'thorax',
                  clip_actions = False,
                  target_vel = 1.2,
                  mirror_model = True,
@@ -144,6 +146,7 @@ class SconeGym(gym.Env, ABC):
         self.foot_body_r = self.model.find_body(foot_body_name + "_r")
         self.hand_body_l = self.try_find_body(hand_body_name + "_l")
         self.hand_body_r = self.try_find_body(hand_body_name + "_r")
+        self.thorax_body = self.try_find_body(thorax_body_name)
         self._find_head_body()
 
         self.set_output_dir("DATE_TIME." + self.model.name())
@@ -505,6 +508,7 @@ class GaitGym(SconeGym):
             "hand_foot_coordination": self.hand_foot_coordination_coeff * self._get_hand_foot_coordination(),
             "head_stability": self.head_stability_coeff * self._get_head_stability(),
             "head_posture": self.head_posture_coeff * self._get_head_posture(),
+            "thorax_posture": self.thorax_posture_coeff * self._get_thorax_posture(),
             "root_posture": self.root_posture_coeff * self._get_root_posture(),
             "scone_measure": self.scone_measure_coeff * self.model.current_measure(),
         }
@@ -605,17 +609,21 @@ class GaitGym(SconeGym):
         av = self.velocity_ramp() * self.head_body.ang_vel().length()
         return max(0, av - self.head_stability_threshold)
 
+    def _get_posture(self, body, target_ori, threshold):
+        qdiff = -body.orientation() * target_ori
+        penalty = self.velocity_ramp() * math.degrees(qdiff.to_rotation_vector().length())
+        return max(0, penalty - threshold)
+
     def _get_head_posture(self):
-        # ea = self.head_body.orientation().to_euler_yzx()
-        # penalty1 = abs(ea.x) + abs(ea.z - self.target_head_tilt)
-        qdiff = -self.head_body.orientation() * self.target_head_orientation
-        penalty =  self.velocity_ramp() * math.degrees(qdiff.to_rotation_vector().length())
-        return max(0, penalty - self.head_posture_threshold)
+        return self._get_posture(self.head_body, self.target_head_orientation, self.head_posture_threshold)
+
+    def _get_thorax_posture(self):
+        if self.thorax_body:
+            return self._get_posture(self.thorax_body, self.target_head_orientation, self.head_posture_threshold)
+        return 0
 
     def _get_root_posture(self):
-        qdiff = -self.root_body.orientation() * self.target_root_orientation
-        penalty =  self.velocity_ramp() * math.degrees(qdiff.to_rotation_vector().length())
-        return max(0, penalty - self.root_posture_threshold)
+        return self._get_posture(self.root_body, self.target_root_orientation, self.root_posture_threshold)
 
     def _joint_limit_torques(self):
         return np.mean(
