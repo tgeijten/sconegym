@@ -60,6 +60,9 @@ class SconeGym(gym.Env, ABC):
                  obs_exclude_root_x = True,
                  obs_exclude_root_y = False,
                  obs_exclude_root_z = True,
+                 init_dof_pos_std = 0.05,
+                 init_dof_vel_std = 0.1,
+                 init_load = 0.5,
                  init_activations_mean = 0.3,
                  init_activations_std = 0.1,
                  min_com_height = 0.5,
@@ -84,9 +87,9 @@ class SconeGym(gym.Env, ABC):
         # Internal settings
         self.episode = 0
         self.total_reward = 0.0
-        self.init_dof_pos_std = 0.05
-        self.init_dof_vel_std = 0.1
-        self.init_load = 0.5
+        self.init_dof_pos_std = init_dof_pos_std
+        self.init_dof_vel_std = init_dof_vel_std
+        self.init_load = init_load
         self.init_activations_mean = init_activations_mean
         self.init_activations_std = init_activations_std
         self.min_com_height = min_com_height
