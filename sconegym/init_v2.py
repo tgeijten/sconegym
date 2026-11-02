@@ -53,3 +53,4 @@ run3d_v2 = {
 
 # Register gyms
 register_gaitgym("sconerun_h32130-v2", '/data-v2/H32130FIG4_260315.scone', run3d_v2)
+register_gaitgym("sconerun_h33144-v2", '/data-v2/H33144FIG4_260513.scone', run3d_v2)
